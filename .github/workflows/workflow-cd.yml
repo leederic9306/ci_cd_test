@@ -1,4 +1,4 @@
-name: CD - Build and Push Docker Image
+name: CD, Deploy EC2
 
 on:
   push:
@@ -41,3 +41,24 @@ jobs:
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/twitter-test-linux:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+  deploy:
+    needs: springboot-twitter-cd
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Deploy to EC2 via SSH (docker run)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            docker stop springboot-twitter || true
+            docker rm springboot-twitter || true
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/twitter-test-linux:latest
+            docker run -d \
+              --name springboot-twitter \
+              -p 8080:8080 \
+              -e SPRING_DATASOURCE_URL=jdbc:mysql://${{ secrets.RDS_ENDPOINT }}:3306/twitterdb \
+              -e SPRING_DATASOURCE_USERNAME=${{ secrets.RDS_USERNAME }} \
+              -e SPRING_DATASOURCE_PASSWORD=${{ secrets.RDS_PASSWORD }} \
+              ${{ secrets.DOCKER_HUB_USERNAME }}/twitter-test-linux:latest
