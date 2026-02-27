@@ -1,0 +1,39 @@
+services:
+  mysql-twitter:
+    container_name: mysql-twitter
+    image: mysql:9.3
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: twitterdb
+      MYSQL_USER: dev
+      MYSQL_PASSWORD: dev123
+    ports:
+      - "3307:3306"
+    networks:
+      - twitter-network
+    # ⭐ 1. MySQL이 정상적으로 일할 준비가 되었는지 계속 핑(ping)을 때려 확인합니다.
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  twitter-test:
+    container_name: twitter-test
+    image: twitter-test:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-twitter:3306/twitterdb
+      - SPRING_DATASOURCE_USERNAME=dev
+      - SPRING_DATASOURCE_PASSWORD=dev123
+    networks:
+      - twitter-network
+    # ⭐ 2. 단순히 컨테이너가 켜지는 게 아니라, '건강해질 때(service_healthy)'까지 기다립니다.
+    depends_on:
+      mysql-twitter:
+        condition: service_healthy
+
+networks:
+  twitter-network:
+    driver: bridge
