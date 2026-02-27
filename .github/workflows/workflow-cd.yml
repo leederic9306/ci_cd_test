@@ -34,4 +34,4 @@ jobs:
         run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/twitter-test-linux:latest .
 
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}//twitter-test-linux:latest
+        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/twitter-test-linux:latest
